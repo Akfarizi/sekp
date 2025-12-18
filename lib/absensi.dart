@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-// untuk format tanggal & waktu
+import 'home.dart';
+import 'data_karyawan.dart';
+import 'jobdesk_page.dart';
+import 'profile_page.dart';
 
 void main() => runApp(const MyApp());
 
@@ -27,6 +30,8 @@ class DataAbsensiPage extends StatefulWidget {
 }
 
 class _DataAbsensiPageState extends State<DataAbsensiPage> {
+  int currentIndex = 0;
+
   List<Map<String, String>> dataAbsensi = [
     {
       "id": "001",
@@ -53,6 +58,7 @@ class _DataAbsensiPageState extends State<DataAbsensiPage> {
   void initState() {
     super.initState();
     filteredAbsensi = List.from(dataAbsensi);
+
     searchController.addListener(() {
       final query = searchController.text.toLowerCase();
       setState(() {
@@ -63,14 +69,14 @@ class _DataAbsensiPageState extends State<DataAbsensiPage> {
     });
   }
 
-  /// Fungsi untuk menambahkan log absensi (Masuk/Keluar)
+  /// ─────────────────────────────────────────────────────────────
+  /// 🔵 Tambah Data Absensi
+  /// ─────────────────────────────────────────────────────────────
   void _tambahAbsensi(String status) {
     final now = DateTime.now();
     final tanggal = DateFormat('yyyy-MM-dd').format(now);
     final waktu = DateFormat('HH:mm').format(now);
 
-    // Contoh: data karyawan login atau aktif bisa diambil dari sistem
-    // Untuk contoh statis, kita pakai nama acak
     final dataBaru = {
       "id": (dataAbsensi.length + 1).toString().padLeft(3, '0'),
       "nama": "Karyawan ${dataAbsensi.length + 1}",
@@ -90,12 +96,8 @@ class _DataAbsensiPageState extends State<DataAbsensiPage> {
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black12,
-          blurRadius: 4,
-          offset: const Offset(0, 2),
-        ),
+      boxShadow: const [
+        BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
       ],
     ),
     child: TextField(
@@ -125,9 +127,14 @@ class _DataAbsensiPageState extends State<DataAbsensiPage> {
     ),
   );
 
+  /// ─────────────────────────────────────────────────────────────
+  /// BUILD UI UTAMA
+  /// ─────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: const Color(0xfff5f7fa),
+
+    // 🔵 APPBAR
     appBar: AppBar(
       title: const Text(
         "Absensi",
@@ -136,6 +143,8 @@ class _DataAbsensiPageState extends State<DataAbsensiPage> {
       backgroundColor: const Color(0xFF00ABB6),
       foregroundColor: Colors.white,
     ),
+
+    // 🔵 BODY
     body: Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -150,7 +159,38 @@ class _DataAbsensiPageState extends State<DataAbsensiPage> {
             ),
           ),
           const SizedBox(height: 8),
-          _searchBox(),
+
+          /// =================================================================
+          /// 🔵 SEARCH BAR + TOMBOL MASUK/KELUAR
+          /// =================================================================
+          Row(
+            children: [
+              Expanded(child: _searchBox()),
+              const SizedBox(width: 10),
+              ElevatedButton.icon(
+                onPressed: () => _tambahAbsensi("Masuk"),
+                icon: const Icon(Icons.login),
+                label: const Text("Masuk"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(40, 50),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: () => _tambahAbsensi("Keluar"),
+                icon: const Icon(Icons.logout),
+                label: const Text("Keluar"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(40, 50),
+                ),
+              ),
+            ],
+          ),
+
           const SizedBox(height: 16),
           const Text(
             "Data Absensi",
@@ -161,6 +201,10 @@ class _DataAbsensiPageState extends State<DataAbsensiPage> {
             ),
           ),
           const SizedBox(height: 4),
+
+          /// =================================================================
+          /// 🔵 LIST ABSENSI
+          /// =================================================================
           Expanded(
             child: filteredAbsensi.isEmpty
                 ? const Center(child: Text("Belum ada data absensi"))
@@ -211,34 +255,74 @@ class _DataAbsensiPageState extends State<DataAbsensiPage> {
         ],
       ),
     ),
-    bottomNavigationBar: Container(
-      padding: const EdgeInsets.all(12),
+
+    // 🔵 BOTTOM NAVIGATION
+    bottomNavigationBar: BottomAppBar(
+      shape: const CircularNotchedRectangle(),
+      notchMargin: 8,
       color: Colors.white,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          ElevatedButton.icon(
-            onPressed: () => _tambahAbsensi("Masuk"),
-            icon: const Icon(Icons.login),
-            label: const Text("Masuk Kerja"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(150, 50),
+      child: SizedBox(
+        height: 65,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.fingerprint),
+              color: currentIndex == 0 ? Colors.teal : Colors.black54,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DataAbsensiPage()),
+                );
+              },
             ),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => _tambahAbsensi("Keluar"),
-            icon: const Icon(Icons.logout),
-            label: const Text("Keluar Kerja"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(150, 50),
+            IconButton(
+              icon: const Icon(Icons.groups),
+              color: currentIndex == 1 ? Colors.teal : Colors.black54,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DataKaryawanPage()),
+                );
+              },
             ),
-          ),
-        ],
+            const SizedBox(width: 30),
+            IconButton(
+              icon: const Icon(Icons.assignment),
+              color: currentIndex == 3 ? Colors.teal : Colors.black54,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const JobdeskPage()),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.person),
+              color: currentIndex == 4 ? Colors.teal : Colors.black54,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfilePage()),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     ),
+
+    // 🔵 HOME FLOATING BUTTON
+    floatingActionButton: FloatingActionButton(
+      backgroundColor: Colors.teal,
+      child: const Icon(Icons.home, color: Colors.white),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      },
+    ),
+    floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
   );
 }

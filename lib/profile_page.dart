@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'home.dart';
+import 'absensi.dart';
+import 'data_karyawan.dart';
+import 'jobdesk_page.dart';
+import 'profile_page.dart';
 
 void main() => runApp(const MyApp());
 
@@ -7,14 +13,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Profile Page',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF00ABB6)),
-          useMaterial3: true,
-        ),
-        home: const ProfilePage(),
-      );
+    debugShowCheckedModeBanner: false,
+    title: 'Profile Page',
+    theme: ThemeData(
+      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF00ABB6)),
+      useMaterial3: true,
+    ),
+    home: const ProfilePage(),
+  );
 }
 
 class ProfilePage extends StatefulWidget {
@@ -25,14 +31,15 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  int currentIndex = 0;
   bool isEditing = false;
 
   final idController = TextEditingController(text: "USR-00123");
   final namaController = TextEditingController(text: "Muhammad Akbar Alfarizi");
-  final emailController =
-      TextEditingController(text: "akbaralfarizi@email.com");
-  final teleponController =
-      TextEditingController(text: "+62 812-3456-7890");
+  final emailController = TextEditingController(
+    text: "akbaralfarizi@email.com",
+  );
+  final teleponController = TextEditingController(text: "+62 812-3456-7890");
   final roleController = TextEditingController(text: "Karyawan");
   final statusController = TextEditingController(text: "Aktif");
 
@@ -45,10 +52,7 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         title: const Text(
           "Profil Saya",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         backgroundColor: const Color(0xFF00ABB6),
         foregroundColor: Colors.white,
@@ -88,7 +92,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             radius: 50,
                             backgroundColor: Colors.grey[200],
                             backgroundImage: const AssetImage(
-                                'assets/akbar.jpeg'),
+                              'assets/akbar.jpeg',
+                            ),
                           ),
                           if (isEditing)
                             InkWell(
@@ -101,8 +106,11 @@ class _ProfilePageState extends State<ProfilePage> {
                                   color: Color(0xFF00ABB6),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.camera_alt,
-                                    color: Colors.white, size: 18),
+                                child: const Icon(
+                                  Icons.camera_alt,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                             ),
                         ],
@@ -143,13 +151,19 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 16),
 
                   _buildField(idController, "ID", readOnly: true),
-                  _buildField(namaController, "Nama",
-                      readOnly: !isEditing),
-                  _buildField(emailController, "Email",
-                      readOnly: !isEditing,
-                      type: TextInputType.emailAddress),
-                  _buildField(teleponController, "Telepon",
-                      readOnly: !isEditing, type: TextInputType.phone),
+                  _buildField(namaController, "Nama", readOnly: !isEditing),
+                  _buildField(
+                    emailController,
+                    "Email",
+                    readOnly: !isEditing,
+                    type: TextInputType.emailAddress,
+                  ),
+                  _buildField(
+                    teleponController,
+                    "Telepon",
+                    readOnly: !isEditing,
+                    type: TextInputType.phone,
+                  ),
                   _buildField(roleController, "Role", readOnly: true),
                   _buildField(statusController, "Status", readOnly: true),
 
@@ -172,8 +186,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF00ABB6),
                               foregroundColor: Colors.white,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               minimumSize: const Size.fromHeight(48),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -192,7 +205,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                     backgroundColor: Colors.redAccent,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 14),
+                                      vertical: 14,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -206,17 +220,23 @@ class _ProfilePageState extends State<ProfilePage> {
                                   onPressed: () {
                                     if (formKey.currentState!.validate()) {
                                       setState(() => isEditing = false);
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(const SnackBar(
-                                              content: Text(
-                                                  "Data profil berhasil disimpan!")));
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "Data profil berhasil disimpan!",
+                                          ),
+                                        ),
+                                      );
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF00ABB6),
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 14),
+                                      vertical: 14,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -233,11 +253,91 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
+      // 🔵 BOTTOM NAVIGATION
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: Colors.white,
+        child: SizedBox(
+          height: 65,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.fingerprint),
+                color: currentIndex == 0 ? Colors.teal : Colors.black54,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DataAbsensiPage(),
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.groups),
+                color: currentIndex == 1 ? Colors.teal : Colors.black54,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DataKaryawanPage(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 30),
+              IconButton(
+                icon: const Icon(Icons.assignment),
+                color: currentIndex == 3 ? Colors.teal : Colors.black54,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const JobdeskPage(),
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.person),
+                color: currentIndex == 4 ? Colors.teal : Colors.black54,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfilePage(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      // 🔵 HOME FLOATING BUTTON
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.teal,
+        child: const Icon(Icons.home, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
-  Widget _buildField(TextEditingController c, String label,
-      {bool readOnly = false, TextInputType? type}) {
+  Widget _buildField(
+    TextEditingController c,
+    String label, {
+    bool readOnly = false,
+    TextInputType? type,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
@@ -250,9 +350,7 @@ class _ProfilePageState extends State<ProfilePage> {
           fillColor: readOnly ? Colors.grey[100] : Colors.white,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: Colors.grey.shade300,
-            ),
+            borderSide: BorderSide(color: Colors.grey.shade300),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

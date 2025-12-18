@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'home.dart';
+import 'absensi.dart';
+import 'data_karyawan.dart';
+import 'jobdesk_page.dart';
+import 'profile_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,6 +35,7 @@ class JobdeskPage extends StatefulWidget {
 }
 
 class _JobdeskPageState extends State<JobdeskPage> {
+  int currentIndex = 0;
   List<Map<String, String>> dataJobdesk = [
     {
       "id": "J001",
@@ -78,44 +85,48 @@ class _JobdeskPageState extends State<JobdeskPage> {
 
   // === Tambahan Search Box ===
   Widget _searchBox() => Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black12,
+          blurRadius: 4,
+          offset: const Offset(0, 2),
         ),
-        child: const TextField(
-          decoration: InputDecoration(
-            hintText: "Ketik nama jobdesk...",
-            prefixIcon: Icon(Icons.search, color: Colors.black),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          ),
-        ),
-      );
+      ],
+    ),
+    child: const TextField(
+      decoration: InputDecoration(
+        hintText: "Ketik nama jobdesk...",
+        prefixIcon: Icon(Icons.search, color: Colors.black),
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      ),
+    ),
+  );
 
   // === Form tambah/edit jobdesk ===
   void showFormJobdesk({Map<String, String>? dataAwal, int? editIndex}) {
     final isEdit = dataAwal != null;
     final formKey = GlobalKey<FormState>();
     final idController = TextEditingController(text: dataAwal?['id'] ?? '');
-    final namaJobdeskController =
-        TextEditingController(text: dataAwal?['nama_jobdesk'] ?? '');
-    final tugasController =
-        TextEditingController(text: dataAwal?['tugas_utama'] ?? '');
-    final namaKaryawanController =
-        TextEditingController(text: dataAwal?['nama_karyawan'] ?? '');
+    final namaJobdeskController = TextEditingController(
+      text: dataAwal?['nama_jobdesk'] ?? '',
+    );
+    final tugasController = TextEditingController(
+      text: dataAwal?['tugas_utama'] ?? '',
+    );
+    final namaKaryawanController = TextEditingController(
+      text: dataAwal?['nama_karyawan'] ?? '',
+    );
 
     showModalBottomSheet(
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       context: context,
       builder: (context) => Padding(
         padding: EdgeInsets.only(
@@ -222,7 +233,8 @@ class _JobdeskPageState extends State<JobdeskPage> {
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       context: context,
       builder: (context) => Padding(
         padding: EdgeInsets.only(
@@ -253,10 +265,12 @@ class _JobdeskPageState extends State<JobdeskPage> {
                     border: OutlineInputBorder(),
                   ),
                   items: dataJobdesk
-                      .map((e) => DropdownMenuItem<String>(
-                            value: e["nama_jobdesk"],
-                            child: Text(e["nama_jobdesk"] ?? ""),
-                          ))
+                      .map(
+                        (e) => DropdownMenuItem<String>(
+                          value: e["nama_jobdesk"],
+                          child: Text(e["nama_jobdesk"] ?? ""),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => selectedJobdesk = v,
                   validator: (v) =>
@@ -283,7 +297,8 @@ class _JobdeskPageState extends State<JobdeskPage> {
                   onPressed: () {
                     if (formKey.currentState!.validate()) {
                       final index = dataJobdesk.indexWhere(
-                          (e) => e["nama_jobdesk"] == selectedJobdesk);
+                        (e) => e["nama_jobdesk"] == selectedJobdesk,
+                      );
                       if (index != -1) {
                         setState(() {
                           dataJobdesk[index]["nama_karyawan"] =
@@ -328,7 +343,10 @@ class _JobdeskPageState extends State<JobdeskPage> {
             ),
             const SizedBox(height: 20),
             ListTile(
-              leading: const Icon(Icons.assignment_add, color: Colors.blueAccent),
+              leading: const Icon(
+                Icons.assignment_add,
+                color: Colors.blueAccent,
+              ),
               title: const Text("Tambah Jobdesk Baru"),
               onTap: () {
                 Navigator.pop(context);
@@ -360,13 +378,13 @@ class _JobdeskPageState extends State<JobdeskPage> {
         ),
         backgroundColor: const Color(0xFF00ABB6),
         foregroundColor: Colors.white,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: showPilihanTambah,
-        icon: const Icon(Icons.add),
-        label: const Text("Tambah"),
-        backgroundColor: const Color(0xFF00ABB6),
-        foregroundColor: Colors.white,
+        actions: [
+          TextButton.icon(
+            onPressed: showPilihanTambah,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text("Tambah", style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -417,8 +435,9 @@ class _JobdeskPageState extends State<JobdeskPage> {
                               children: [
                                 CircleAvatar(
                                   radius: 28,
-                                  backgroundColor:
-                                      const Color(0xFF00ABB6).withOpacity(0.1),
+                                  backgroundColor: const Color(
+                                    0xFF00ABB6,
+                                  ).withOpacity(0.1),
                                   child: const Icon(
                                     Icons.assignment,
                                     color: Color(0xFF00ABB6),
@@ -428,7 +447,8 @@ class _JobdeskPageState extends State<JobdeskPage> {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         j["nama_jobdesk"] ?? "",
@@ -448,9 +468,11 @@ class _JobdeskPageState extends State<JobdeskPage> {
                                       const SizedBox(height: 6),
                                       Row(
                                         children: [
-                                          const Icon(Icons.person,
-                                              size: 14,
-                                              color: Colors.black54),
+                                          const Icon(
+                                            Icons.person,
+                                            size: 14,
+                                            color: Colors.black54,
+                                          ),
                                           const SizedBox(width: 4),
                                           Text(
                                             j["nama_karyawan"] ?? "-",
@@ -468,16 +490,22 @@ class _JobdeskPageState extends State<JobdeskPage> {
                                   onSelected: (value) {
                                     if (value == "edit") {
                                       showFormJobdesk(
-                                          dataAwal: j, editIndex: index);
+                                        dataAwal: j,
+                                        editIndex: index,
+                                      );
                                     } else if (value == "hapus") {
                                       hapusJobdesk(index);
                                     }
                                   },
                                   itemBuilder: (_) => const [
                                     PopupMenuItem(
-                                        value: "edit", child: Text("Edit")),
+                                      value: "edit",
+                                      child: Text("Edit"),
+                                    ),
                                     PopupMenuItem(
-                                        value: "hapus", child: Text("Hapus")),
+                                      value: "hapus",
+                                      child: Text("Hapus"),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -490,6 +518,82 @@ class _JobdeskPageState extends State<JobdeskPage> {
           ],
         ),
       ),
+      // 🔵 BOTTOM NAVIGATION
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: Colors.white,
+        child: SizedBox(
+          height: 65,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.fingerprint),
+                color: currentIndex == 0 ? Colors.teal : Colors.black54,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DataAbsensiPage(),
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.groups),
+                color: currentIndex == 1 ? Colors.teal : Colors.black54,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DataKaryawanPage(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 30),
+              IconButton(
+                icon: const Icon(Icons.assignment),
+                color: currentIndex == 3 ? Colors.teal : Colors.black54,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const JobdeskPage(),
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.person),
+                color: currentIndex == 4 ? Colors.teal : Colors.black54,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfilePage(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      // 🔵 HOME FLOATING BUTTON
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.teal,
+        child: const Icon(Icons.home, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'home.dart';
+import 'absensi.dart';
+import 'data_karyawan.dart';
+import 'jobdesk_page.dart';
+import 'profile_page.dart';
 
 void main() => runApp(const MyApp());
 
@@ -24,6 +30,7 @@ class DataKaryawanPage extends StatefulWidget {
 }
 
 class _DataKaryawanPageState extends State<DataKaryawanPage> {
+  int currentIndex = 0;
   final TextEditingController searchController = TextEditingController();
   List<Map<String, String>> dataKaryawan = [
     {
@@ -100,26 +107,26 @@ class _DataKaryawanPageState extends State<DataKaryawanPage> {
   }
 
   Widget _searchBox() => Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black12,
+          blurRadius: 4,
+          offset: const Offset(0, 2),
         ),
-        child: const TextField(
-          decoration: InputDecoration(
-            hintText: "Ketik nama karyawan...",
-            prefixIcon: Icon(Icons.search, color: Colors.black),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          ),
-        ),
-      );
+      ],
+    ),
+    child: const TextField(
+      decoration: InputDecoration(
+        hintText: "Ketik nama karyawan...",
+        prefixIcon: Icon(Icons.search, color: Colors.black),
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      ),
+    ),
+  );
 
   void _showForm({Map<String, String>? dataAwal, int? editIndex}) {
     final isEdit = dataAwal != null;
@@ -285,14 +292,9 @@ class _DataKaryawanPageState extends State<DataKaryawanPage> {
       ),
       backgroundColor: const Color(0xFF00ABB6),
       foregroundColor: Colors.white,
+      actions: [IconButton(icon: const Icon(Icons.add), onPressed: _showForm)],
     ),
-    floatingActionButton: FloatingActionButton.extended(
-      onPressed: _showForm,
-      icon: const Icon(Icons.add),
-      label: const Text("Tambah"),
-      backgroundColor: const Color(0xFF00ABB6),
-      foregroundColor: Colors.white,
-    ),
+
     body: Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -406,5 +408,77 @@ class _DataKaryawanPageState extends State<DataKaryawanPage> {
         ],
       ),
     ),
+    // 🔵 BOTTOM NAVIGATION
+    bottomNavigationBar: BottomAppBar(
+      shape: const CircularNotchedRectangle(),
+      notchMargin: 8,
+      color: Colors.white,
+      child: SizedBox(
+        height: 65,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.fingerprint),
+              color: currentIndex == 0 ? Colors.teal : Colors.black54,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DataAbsensiPage(),
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.groups),
+              color: currentIndex == 1 ? Colors.teal : Colors.black54,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DataKaryawanPage(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 30),
+            IconButton(
+              icon: const Icon(Icons.assignment),
+              color: currentIndex == 3 ? Colors.teal : Colors.black54,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const JobdeskPage()),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.person),
+              color: currentIndex == 4 ? Colors.teal : Colors.black54,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfilePage()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    ),
+
+    // 🔵 HOME FLOATING BUTTON
+    floatingActionButton: FloatingActionButton(
+      backgroundColor: Colors.teal,
+      child: const Icon(Icons.home, color: Colors.white),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      },
+    ),
+    floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
   );
 }

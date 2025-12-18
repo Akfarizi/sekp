@@ -1,27 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'home.dart';
 import 'absensi.dart';
 import 'data_karyawan.dart';
 import 'jobdesk_page.dart';
 import 'profile_page.dart';
-
-void main() => runApp(const MyApp());
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) => MaterialApp(
-    debugShowCheckedModeBanner: false,
-    title: 'Profile Page',
-    theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF00ABB6)),
-      useMaterial3: true,
-    ),
-    home: const ProfilePage(),
-  );
-}
+import '../widgets/navbar.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -253,84 +236,10 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
-      // 🔵 BOTTOM NAVIGATION
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        color: Colors.white,
-        child: SizedBox(
-          height: 65,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.fingerprint),
-                color: currentIndex == 0 ? Colors.teal : Colors.black54,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const DataAbsensiPage(),
-                    ),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.groups),
-                color: currentIndex == 1 ? Colors.teal : Colors.black54,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const DataKaryawanPage(),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(width: 30),
-              IconButton(
-                icon: const Icon(Icons.assignment),
-                color: currentIndex == 3 ? Colors.teal : Colors.black54,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const JobdeskPage(),
-                    ),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.person),
-                color: currentIndex == 4 ? Colors.teal : Colors.black54,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProfilePage(),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-
-      // 🔵 HOME FLOATING BUTTON
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.teal,
-        child: const Icon(Icons.home, color: Colors.white),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const HomePage()),
-          );
-        },
-      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
+  
 
   Widget _buildField(
     TextEditingController c,

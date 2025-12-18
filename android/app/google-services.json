@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "509316971428",
+    "project_id": "sekp-e625d",
+    "storage_bucket": "sekp-e625d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:509316971428:android:4f9a2e13b046640bb99f31",
+        "android_client_info": {
+          "package_name": "com.example.sekp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAYbVuRMOOxoE46RTUOh8xrLJz-m-ro8_I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

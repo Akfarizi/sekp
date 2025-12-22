@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'home.dart';
-import '../widgets/navbar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DataKaryawanPage extends StatefulWidget {
   const DataKaryawanPage({super.key});
@@ -11,111 +10,85 @@ class DataKaryawanPage extends StatefulWidget {
 }
 
 class _DataKaryawanPageState extends State<DataKaryawanPage> {
-  final TextEditingController searchController = TextEditingController();
-  final CollectionReference karyawanRef =
-      FirebaseFirestore.instance.collection('karyawan');
+  final user = FirebaseAuth.instance.currentUser!;
+  final usersRef = FirebaseFirestore.instance.collection('users');
 
-  String searchQuery = "";
+  String search = "";
+  String roleUser = "";
 
-  // ================= ADD & EDIT =================
-  void _showForm({DocumentSnapshot? doc}) {
-    final formKey = GlobalKey<FormState>();
-    final idC = TextEditingController(text: doc?['id']);
-    final namaC = TextEditingController(text: doc?['nama']);
-    final emailC = TextEditingController(text: doc?['email']);
-    final telpC = TextEditingController(text: doc?['telepon']);
-    String? role = doc?['role'];
-    String? status = doc?['status'];
-
-    showModalBottomSheet(
-      isScrollControlled: true,
-      context: context,
-      builder: (_) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          16,
-          16,
-          MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Form(
-          key: formKey,
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              Text(
-                doc == null ? "Tambah Karyawan" : "Edit Karyawan",
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF00ABB6),
-                ),
-              ),
-              const SizedBox(height: 12),
-              _field(idC, "ID"),
-              _field(namaC, "Nama"),
-              _field(emailC, "Email",
-                  type: TextInputType.emailAddress),
-              _field(telpC, "Telepon",
-                  type: TextInputType.phone),
-              _dropdown("Role", role, ["Manager", "Karyawan"],
-                  (v) => role = v),
-              _dropdown("Status", status, ["Aktif", "Nonaktif"],
-                  (v) => status = v),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00ABB6),
-                  minimumSize: const Size(double.infinity, 48),
-                ),
-                child: const Text("Simpan"),
-                onPressed: () async {
-                  if (formKey.currentState!.validate()) {
-                    final data = {
-                      "id": idC.text,
-                      "nama": namaC.text,
-                      "email": emailC.text,
-                      "telepon": telpC.text,
-                      "role": role,
-                      "status": status,
-                    };
-
-                    if (doc == null) {
-                      await karyawanRef.add(data);
-                    } else {
-                      await karyawanRef.doc(doc.id).update(data);
-                    }
-
-                    Navigator.pop(context);
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _loadRole();
   }
 
-  // ================= DELETE =================
-  void _hapus(String id) {
+  Future<void> _loadRole() async {
+    final doc = await usersRef.doc(user.uid).get();
+
+    if (doc.exists && doc.data() != null) {
+      roleUser = doc.data()!['role'] ?? 'Karyawan';
+    } else {
+      roleUser = 'Karyawan';
+    }
+
+    setState(() {});
+  }
+
+  // ================= EDIT USER (ADMIN ONLY) =================
+  void _editUser(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+
+    final namaC = TextEditingController(
+      text: data['nama'] ?? '',
+    );
+
+    String status = data['status'] ?? 'Aktif';
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Hapus Data"),
-        content: const Text("Yakin ingin menghapus karyawan ini?"),
+        title: const Text("Edit Karyawan"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: namaC,
+              decoration: const InputDecoration(labelText: "Nama"),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: status,
+              decoration: const InputDecoration(labelText: "Status"),
+              items: const [
+                DropdownMenuItem(
+                  value: "Aktif",
+                  child: Text("Aktif"),
+                ),
+                DropdownMenuItem(
+                  value: "Nonaktif",
+                  child: Text("Nonaktif"),
+                ),
+              ],
+              onChanged: (v) {
+                if (v != null) status = v;
+              },
+            ),
+          ],
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Batal")),
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal"),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              await karyawanRef.doc(id).delete();
+              await usersRef.doc(doc.id).update({
+                "nama": namaC.text,
+                "status": status,
+              });
               Navigator.pop(context);
             },
-            child: const Text("Hapus"),
+            child: const Text("Simpan"),
           ),
         ],
       ),
@@ -125,125 +98,127 @@ class _DataKaryawanPageState extends State<DataKaryawanPage> {
   // ================= UI =================
   @override
   Widget build(BuildContext context) {
+    if (roleUser.isEmpty) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: const Color(0xfff5f7fa),
       appBar: AppBar(
         title: const Text("Data Karyawan"),
         backgroundColor: const Color(0xFF00ABB6),
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showForm(),
-          )
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: TextField(
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.search),
+                hintText: "Cari nama karyawan",
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (v) {
+                setState(() {
+                  search = v.toLowerCase();
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: usersRef.snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                if (!snapshot.hasData ||
+                    snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Text("Belum ada data user"),
+                  );
+                }
+
+                final docs = snapshot.data!.docs.where((doc) {
+                  final data =
+                      doc.data() as Map<String, dynamic>;
+                  final nama =
+                      (data['nama'] ?? '').toString().toLowerCase();
+                  return nama.contains(search);
+                });
+
+                return ListView(
+                  padding: const EdgeInsets.all(12),
+                  children: docs.map((doc) {
+                    final data =
+                        doc.data() as Map<String, dynamic>;
+
+                    return Card(
+                      child: ListTile(
+                        title: Text(data['nama'] ?? '-'),
+                        subtitle: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Text(data['email'] ?? '-'),
+                            Text("Role: ${data['role'] ?? '-'}"),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Text("Status: "),
+                                _statusBadge(
+                                  data['status'] ?? 'Aktif',
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        trailing: roleUser == "Admin"
+                            ? IconButton(
+                                icon: const Icon(Icons.edit),
+                                onPressed: () =>
+                                    _editUser(doc),
+                              )
+                            : null,
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            TextField(
-              controller: searchController,
-              decoration: const InputDecoration(
-                hintText: "Cari nama...",
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: (v) =>
-                  setState(() => searchQuery = v.toLowerCase()),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: karyawanRef.snapshots(),
-                builder: (c, s) {
-                  if (s.connectionState ==
-                      ConnectionState.waiting) {
-                    return const Center(
-                        child: CircularProgressIndicator());
-                  }
-
-                  final data = s.data!.docs.where((d) =>
-                      d['nama']
-                          .toString()
-                          .toLowerCase()
-                          .contains(searchQuery));
-
-                  if (data.isEmpty) {
-                    return const Center(
-                        child: Text("Data kosong"));
-                  }
-
-                  return ListView(
-                    children: data.map((doc) {
-                      return Card(
-                        child: ListTile(
-                          title: Text(doc['nama']),
-                          subtitle: Text(doc['email']),
-                          trailing: PopupMenuButton(
-                            onSelected: (v) {
-                              if (v == "edit") {
-                                _showForm(doc: doc);
-                              } else {
-                                _hapus(doc.id);
-                              }
-                            },
-                            itemBuilder: (_) => const [
-                              PopupMenuItem(
-                                  value: "edit",
-                                  child: Text("Edit")),
-                              PopupMenuItem(
-                                  value: "hapus",
-                                  child: Text("Hapus")),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-
     );
   }
+}
 
-  // ================= WIDGET HELPER =================
-  Widget _field(TextEditingController c, String label,
-          {TextInputType? type}) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: TextFormField(
-          controller: c,
-          keyboardType: type,
-          decoration: InputDecoration(
-            labelText: label,
-            border: const OutlineInputBorder(),
-          ),
-          validator: (v) =>
-              v!.isEmpty ? "Wajib diisi" : null,
-        ),
-      );
+// ================= STATUS BADGE =================
+Widget _statusBadge(String status) {
+  final isActive = status == "Aktif";
 
-  Widget _dropdown(String label, String? value,
-          List<String> items, Function(String?) onChanged) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: DropdownButtonFormField(
-          value: value,
-          decoration: InputDecoration(
-            labelText: label,
-            border: const OutlineInputBorder(),
-          ),
-          items: items
-              .map((e) =>
-                  DropdownMenuItem(value: e, child: Text(e)))
-              .toList(),
-          onChanged: onChanged,
-          validator: (v) => v == null ? "Pilih $label" : null,
-        ),
-      );
+  return Container(
+    padding:
+        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: isActive ? Colors.green[100] : Colors.red[100],
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Text(
+      status,
+      style: TextStyle(
+        color: isActive
+            ? Colors.green[800]
+            : Colors.red[800],
+        fontWeight: FontWeight.bold,
+        fontSize: 12,
+      ),
+    ),
+  );
 }

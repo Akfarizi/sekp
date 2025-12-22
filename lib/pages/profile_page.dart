@@ -1,10 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'home.dart';
-import 'absensi.dart';
-import 'data_karyawan.dart';
-import 'jobdesk_page.dart';
-import 'profile_page.dart';
-import '../widgets/navbar.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -14,260 +13,234 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  int currentIndex = 0;
-  bool isEditing = false;
-
-  final idController = TextEditingController(text: "USR-00123");
-  final namaController = TextEditingController(text: "Muhammad Akbar Alfarizi");
-  final emailController = TextEditingController(
-    text: "akbaralfarizi@email.com",
-  );
-  final teleponController = TextEditingController(text: "+62 812-3456-7890");
-  final roleController = TextEditingController(text: "Karyawan");
-  final statusController = TextEditingController(text: "Aktif");
+  final user = FirebaseAuth.instance.currentUser!;
+  final usersRef = FirebaseFirestore.instance.collection('users');
 
   final formKey = GlobalKey<FormState>();
+  bool isEditing = false;
+  bool loading = false;
 
+  late TextEditingController namaC;
+  late TextEditingController emailC;
+  late TextEditingController teleponC;
+  late TextEditingController roleC;
+  late TextEditingController statusC;
+
+  String? photoUrl;
+  File? imageFile;
+
+  @override
+  void initState() {
+    super.initState();
+    namaC = TextEditingController();
+    emailC = TextEditingController(text: user.email);
+    teleponC = TextEditingController();
+    roleC = TextEditingController();
+    statusC = TextEditingController();
+
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final doc = await usersRef.doc(user.uid).get();
+
+    if (doc.exists) {
+      final data = doc.data()!;
+      namaC.text = data['nama'] ?? user.displayName ?? '';
+      teleponC.text = data['telepon'] ?? '';
+      roleC.text = data['role'] ?? 'Karyawan';
+      statusC.text = data['status'] ?? 'Aktif';
+      photoUrl = data['photoUrl'];
+    } else {
+      await usersRef.doc(user.uid).set({
+        "nama": user.displayName ?? "",
+        "telepon": "",
+        "role": "Karyawan",
+        "status": "Aktif",
+        "photoUrl": null,
+      });
+    }
+
+    setState(() {});
+  }
+
+  /// ================= FOTO CAMERA =================
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 70,
+    );
+
+    if (picked != null) {
+      setState(() => imageFile = File(picked.path));
+    }
+  }
+
+  /// ================= UPLOAD FOTO =================
+  Future<String?> _uploadImage() async {
+    if (imageFile == null) return photoUrl;
+
+    final ref = FirebaseStorage.instance
+        .ref('profile/${user.uid}.jpg');
+
+    await ref.putFile(imageFile!);
+    return await ref.getDownloadURL();
+  }
+
+  /// ================= SIMPAN =================
+  Future<void> _saveProfile() async {
+    if (!formKey.currentState!.validate()) return;
+
+    setState(() => loading = true);
+
+    final url = await _uploadImage();
+
+    await usersRef.doc(user.uid).update({
+      "nama": namaC.text,
+      "telepon": teleponC.text,
+      "photoUrl": url,
+    });
+
+    await user.updateDisplayName(namaC.text);
+
+    setState(() {
+      loading = false;
+      isEditing = false;
+      photoUrl = url;
+      imageFile = null;
+    });
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Profil berhasil diperbarui")),
+    );
+  }
+
+  /// ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff4f7fb),
       appBar: AppBar(
-        title: const Text(
-          "Profil Saya",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
+        title: const Text("Profil Saya"),
         backgroundColor: const Color(0xFF00ABB6),
         foregroundColor: Colors.white,
-        elevation: 2,
         centerTitle: true,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            constraints: const BoxConstraints(maxWidth: 650),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12.withOpacity(0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Form(
-              key: formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Foto Profil + Nama
-                  Column(
-                    children: [
-                      Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Colors.grey[200],
-                            backgroundImage: const AssetImage(
-                              'assets/akbar.jpeg',
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  children: [
+                    /// FOTO
+                    Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 55,
+                          backgroundImage: imageFile != null
+                              ? FileImage(imageFile!)
+                              : (photoUrl != null
+                                  ? NetworkImage(photoUrl!)
+                                  : null) as ImageProvider?,
+                          child: photoUrl == null && imageFile == null
+                              ? const Icon(Icons.person, size: 50)
+                              : null,
+                        ),
+                        if (isEditing)
+                          InkWell(
+                            onTap: _pickImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF00ABB6),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                             ),
                           ),
-                          if (isEditing)
-                            InkWell(
-                              onTap: () {
-                                // nanti bisa tambahkan picker foto
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF00ABB6),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.camera_alt,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        namaController.text,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        roleController.text,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Informasi Profil
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Informasi Akun",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[700],
-                      ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                  _buildField(idController, "ID", readOnly: true),
-                  _buildField(namaController, "Nama", readOnly: !isEditing),
-                  _buildField(
-                    emailController,
-                    "Email",
-                    readOnly: !isEditing,
-                    type: TextInputType.emailAddress,
-                  ),
-                  _buildField(
-                    teleponController,
-                    "Telepon",
-                    readOnly: !isEditing,
-                    type: TextInputType.phone,
-                  ),
-                  _buildField(roleController, "Role", readOnly: true),
-                  _buildField(statusController, "Status", readOnly: true),
+                    _field(namaC, "Nama", !isEditing),
+                    _field(emailC, "Email", true),
+                    _field(teleponC, "Telepon", !isEditing),
+                    _field(roleC, "Role", true),
+                    _field(statusC, "Status", true),
 
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 32),
 
-                  // Tombol
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
-                    child: !isEditing
-                        ? ElevatedButton.icon(
-                            key: const ValueKey("editBtn"),
-                            onPressed: () {
-                              setState(() => isEditing = true);
-                            },
-                            icon: const Icon(Icons.edit),
-                            label: const Text(
-                              "Edit Profil",
-                              style: TextStyle(fontSize: 16),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF00ABB6),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              minimumSize: const Size.fromHeight(48),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          )
-                        : Row(
-                            key: const ValueKey("saveCancelRow"),
+                    isEditing
+                        ? Row(
                             children: [
                               Expanded(
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    setState(() => isEditing = false);
-                                  },
+                                  onPressed: () =>
+                                      setState(() => isEditing = false),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.redAccent,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 14,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: const Text("Cancel"),
+                                      backgroundColor: Colors.red),
+                                  child: const Text("Batal"),
                                 ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    if (formKey.currentState!.validate()) {
-                                      setState(() => isEditing = false);
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            "Data profil berhasil disimpan!",
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  },
+                                  onPressed: _saveProfile,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF00ABB6),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 14,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: const Text("Save"),
+                                      backgroundColor:
+                                          const Color(0xFF00ABB6)),
+                                  child: const Text("Simpan"),
                                 ),
                               ),
                             ],
+                          )
+                        : ElevatedButton.icon(
+                            onPressed: () =>
+                                setState(() => isEditing = true),
+                            icon: const Icon(Icons.edit),
+                            label: const Text("Edit Profil"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF00ABB6),
+                              minimumSize:
+                                  const Size.fromHeight(48),
+                            ),
                           ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
-  
 
-  Widget _buildField(
+  Widget _field(
     TextEditingController c,
-    String label, {
-    bool readOnly = false,
-    TextInputType? type,
-  }) {
+    String label,
+    bool readOnly,
+  ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         controller: c,
         readOnly: readOnly,
-        keyboardType: type,
         decoration: InputDecoration(
           labelText: label,
           filled: true,
-          fillColor: readOnly ? Colors.grey[100] : Colors.white,
-          enabledBorder: OutlineInputBorder(
+          fillColor: readOnly ? Colors.grey[200] : Colors.white,
+          border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF00ABB6), width: 1.5),
           ),
         ),
         validator: (v) =>
-            v == null || v.isEmpty ? "Field $label wajib diisi" : null,
+            v == null || v.isEmpty ? "$label wajib diisi" : null,
       ),
     );
   }

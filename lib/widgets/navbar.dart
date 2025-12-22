@@ -23,16 +23,7 @@ class GlobalNavbar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            /// ABSENSI
-            IconButton(
-              icon: Icon(
-                Icons.fingerprint,
-                color: currentIndex == 0 ? active : inactive,
-              ),
-              onPressed: () => onTap(0),
-            ),
-
-            /// DATA KARYAWAN
+            /// DATA KARYAWAN (index 1)
             IconButton(
               icon: Icon(
                 Icons.groups,
@@ -41,10 +32,7 @@ class GlobalNavbar extends StatelessWidget {
               onPressed: () => onTap(1),
             ),
 
-            /// SPACE FAB
-            const SizedBox(width: 40),
-
-            /// JOBDESK
+            /// JOBDESK (index 2)
             IconButton(
               icon: Icon(
                 Icons.assignment,
@@ -53,13 +41,25 @@ class GlobalNavbar extends StatelessWidget {
               onPressed: () => onTap(2),
             ),
 
-            /// PROFILE
+            /// SPACE FAB
+            const SizedBox(width: 40),
+
+            /// PENGGAJIAN (index 3)
             IconButton(
               icon: Icon(
-                Icons.person,
+                Icons.payments,
                 color: currentIndex == 3 ? active : inactive,
               ),
               onPressed: () => onTap(3),
+            ),
+
+            /// PROFILE (index 4)
+            IconButton(
+              icon: Icon(
+                Icons.person,
+                color: currentIndex == 4 ? active : inactive,
+              ),
+              onPressed: () => onTap(4),
             ),
           ],
         ),

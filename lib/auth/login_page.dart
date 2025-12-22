@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -42,10 +43,24 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      // 1️⃣ BUAT AUTH
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailC.text.trim(),
         password: passC.text.trim(),
       );
+
+      final uid = cred.user!.uid;
+
+      // 2️⃣ SIMPAN KE FIRESTORE (INI YANG KAMU BELUM LAKUKAN)
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        "nama": emailC.text.split('@')[0],
+        "email": emailC.text.trim(),
+        "role": "Karyawan", // default
+        "status": "Aktif",
+        "telepon": "",
+        "photoUrl": null,
+        "createdAt": FieldValue.serverTimestamp(),
+      });
     } on FirebaseAuthException catch (e) {
       setState(() {
         error = e.message ?? "Register gagal";
@@ -88,8 +103,7 @@ class _LoginPageState extends State<LoginPage> {
                       labelText: "Email",
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) =>
-                        v!.isEmpty ? "Email wajib diisi" : null,
+                    validator: (v) => v!.isEmpty ? "Email wajib diisi" : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -104,17 +118,12 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 12),
                   if (error.isNotEmpty)
-                    Text(
-                      error,
-                      style: const TextStyle(color: Colors.red),
-                    ),
+                    Text(error, style: const TextStyle(color: Colors.red)),
                   const SizedBox(height: 12),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      minimumSize:
-                          const Size(double.infinity, 48),
-                      backgroundColor:
-                          const Color(0xFF00ABB6),
+                      minimumSize: const Size(double.infinity, 48),
+                      backgroundColor: const Color(0xFF00ABB6),
                     ),
                     onPressed: loading
                         ? null
@@ -124,8 +133,7 @@ class _LoginPageState extends State<LoginPage> {
                             }
                           },
                     child: loading
-                        ? const CircularProgressIndicator(
-                            color: Colors.white)
+                        ? const CircularProgressIndicator(color: Colors.white)
                         : const Text("Login"),
                   ),
                   const SizedBox(height: 8),

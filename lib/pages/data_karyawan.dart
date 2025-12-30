@@ -12,6 +12,7 @@ class DataKaryawanPage extends StatefulWidget {
 class _DataKaryawanPageState extends State<DataKaryawanPage> {
   final user = FirebaseAuth.instance.currentUser!;
   final usersRef = FirebaseFirestore.instance.collection('users');
+  final etosRef = FirebaseFirestore.instance.collection('etos_kerja');
 
   String search = "";
   String roleUser = "";
@@ -24,24 +25,14 @@ class _DataKaryawanPageState extends State<DataKaryawanPage> {
 
   Future<void> _loadRole() async {
     final doc = await usersRef.doc(user.uid).get();
-
-    if (doc.exists && doc.data() != null) {
-      roleUser = doc.data()!['role'] ?? 'Karyawan';
-    } else {
-      roleUser = 'Karyawan';
-    }
-
+    roleUser = doc.data()?['role'] ?? 'Karyawan';
     setState(() {});
   }
 
-  // ================= EDIT USER (ADMIN ONLY) =================
+  // ================= EDIT USER =================
   void _editUser(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-
-    final namaC = TextEditingController(
-      text: data['nama'] ?? '',
-    );
-
+    final namaC = TextEditingController(text: data['nama'] ?? '');
     String status = data['status'] ?? 'Aktif';
 
     showDialog(
@@ -60,18 +51,10 @@ class _DataKaryawanPageState extends State<DataKaryawanPage> {
               value: status,
               decoration: const InputDecoration(labelText: "Status"),
               items: const [
-                DropdownMenuItem(
-                  value: "Aktif",
-                  child: Text("Aktif"),
-                ),
-                DropdownMenuItem(
-                  value: "Nonaktif",
-                  child: Text("Nonaktif"),
-                ),
+                DropdownMenuItem(value: "Aktif", child: Text("Aktif")),
+                DropdownMenuItem(value: "Nonaktif", child: Text("Nonaktif")),
               ],
-              onChanged: (v) {
-                if (v != null) status = v;
-              },
+              onChanged: (v) => status = v ?? status,
             ),
           ],
         ),
@@ -120,72 +103,78 @@ class _DataKaryawanPageState extends State<DataKaryawanPage> {
                 hintText: "Cari nama karyawan",
                 border: OutlineInputBorder(),
               ),
-              onChanged: (v) {
-                setState(() {
-                  search = v.toLowerCase();
-                });
-              },
+              onChanged: (v) => setState(() {
+                search = v.toLowerCase();
+              }),
             ),
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: usersRef.snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState ==
-                    ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                if (!snapshot.hasData ||
-                    snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Text("Belum ada data user"),
-                  );
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 final docs = snapshot.data!.docs.where((doc) {
-                  final data =
-                      doc.data() as Map<String, dynamic>;
                   final nama =
-                      (data['nama'] ?? '').toString().toLowerCase();
+                      (doc['nama'] ?? '').toString().toLowerCase();
                   return nama.contains(search);
                 });
 
                 return ListView(
                   padding: const EdgeInsets.all(12),
                   children: docs.map((doc) {
-                    final data =
-                        doc.data() as Map<String, dynamic>;
+                    final data = doc.data() as Map<String, dynamic>;
 
                     return Card(
-                      child: ListTile(
-                        title: Text(data['nama'] ?? '-'),
-                        subtitle: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                      elevation: 3,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // ================= HEADER =================
+                            Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  data['nama'] ?? '-',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                if (roleUser == "Admin")
+                                  IconButton(
+                                    icon: const Icon(Icons.edit),
+                                    onPressed: () => _editUser(doc),
+                                  ),
+                              ],
+                            ),
+
                             Text(data['email'] ?? '-'),
                             Text("Role: ${data['role'] ?? '-'}"),
-                            const SizedBox(height: 4),
+
+                            const SizedBox(height: 6),
                             Row(
                               children: [
                                 const Text("Status: "),
-                                _statusBadge(
-                                  data['status'] ?? 'Aktif',
-                                ),
+                                _statusBadge(data['status'] ?? 'Aktif'),
                               ],
                             ),
+
+                            const Divider(),
+
+                            // ================= INDIKATOR ETOS =================
+                            _etosIndicator(doc.id),
                           ],
                         ),
-                        trailing: roleUser == "Admin"
-                            ? IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () =>
-                                    _editUser(doc),
-                              )
-                            : null,
                       ),
                     );
                   }).toList(),
@@ -197,6 +186,50 @@ class _DataKaryawanPageState extends State<DataKaryawanPage> {
       ),
     );
   }
+
+  // ================= ETOS INDICATOR =================
+  Widget _etosIndicator(String uid) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: etosRef.where('uid', isEqualTo: uid).limit(1).snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Text(
+            "Etos Kerja: Belum Dinilai",
+            style: TextStyle(color: Colors.grey),
+          );
+        }
+
+        final d = snapshot.data!.docs.first.data() as Map<String, dynamic>;
+
+        final avg = ((d['disiplin'] +
+                    d['inisiatif'] +
+                    d['kerjasama'] +
+                    d['tanggungjawab']) /
+                4)
+            .toDouble();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Etos Kerja (Avg ${avg.toStringAsFixed(1)}/5)",
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            LinearProgressIndicator(
+              value: avg / 5,
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(8),
+              backgroundColor: Colors.grey[300],
+              valueColor: const AlwaysStoppedAnimation(
+                Color(0xFF00ABB6),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 // ================= STATUS BADGE =================
@@ -204,8 +237,7 @@ Widget _statusBadge(String status) {
   final isActive = status == "Aktif";
 
   return Container(
-    padding:
-        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
     decoration: BoxDecoration(
       color: isActive ? Colors.green[100] : Colors.red[100],
       borderRadius: BorderRadius.circular(12),
@@ -213,9 +245,7 @@ Widget _statusBadge(String status) {
     child: Text(
       status,
       style: TextStyle(
-        color: isActive
-            ? Colors.green[800]
-            : Colors.red[800],
+        color: isActive ? Colors.green[800] : Colors.red[800],
         fontWeight: FontWeight.bold,
         fontSize: 12,
       ),

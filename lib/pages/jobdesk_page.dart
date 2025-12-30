@@ -183,7 +183,7 @@ class _JobdeskPageState extends State<JobdeskPage> {
     return Scaffold(
       backgroundColor: const Color(0xfff5f7fa),
       appBar: AppBar(
-        title: const Text("Jobdesk"),
+        title: const Text("Tugas & Tanggung Jawab"),
         backgroundColor: const Color(0xFF00ABB6),
         foregroundColor: Colors.white,
         actions: [

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart'; // ← wajib
+import 'firebase_options.dart';
 import 'auth/auth_gate.dart';
+import 'pages/home.dart';
+import 'export/exprt_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,9 +18,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: AuthGate(),
+      home: const AuthGate(),
+      routes: {
+        '/home': (_) => const HomePage(),
+        '/export-excel': (context) => const ExportPage(),
+      },
     );
   }
 }
